@@ -1,0 +1,59 @@
+import os
+import face_recognition
+import cv2
+
+def load_images_from_folder(folder):
+    images = []
+    labels = []
+    for filename in os.listdir(folder):
+        path = os.path.join(folder, filename)
+        if os.path.isfile(path) and filename.endswith(('.jpg', '.jpeg', '.png')):
+            images.append(face_recognition.load_image_file(path))
+            labels.append(filename.split('.')[0])  # Assuming the name is in the filename
+    return images, labels
+
+def recognize_faces(image_path, known_encodings, known_labels):
+    image = face_recognition.load_image_file(image_path)
+    face_locations = face_recognition.face_locations(image)
+    face_encodings = face_recognition.face_encodings(image, face_locations)
+
+    for face_encoding in face_encodings:
+        # Compare the face encoding with known encodings
+        matches = face_recognition.compare_faces(known_encodings, face_encoding)
+        name = "unknown"
+
+        # If a match is found, use the label associated with the known face
+        if True in matches:
+            first_match_index = matches.index(True)
+            name = known_labels[first_match_index]
+
+        # Draw a rectangle around the face and display the name
+        for (top, right, bottom, left) in face_locations:
+            cv2.rectangle(image, (left, top), (right, bottom), (0, 255, 0), 2)
+            cv2.putText(image, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+
+    return image
+
+  if __name__ == "__main__":
+    # Specify the path to your dataset folder
+    dataset_folder = "/your/folder_path"
+    
+    # Load images and labels from the dataset folder
+    images, labels = load_images_from_folder(dataset_folder)
+
+    # Encode faces in the dataset
+    known_encodings = [face_recognition.face_encodings(img)[0] for img in images]
+
+    # Specify the path to the test image
+    test_image_path = "/user/image_path"
+
+    # Perform face recognition on the test image
+    result_image = recognize_faces(test_image_path, known_encodings, labels)
+
+    # Display the result image
+    cv2.imshow('Face Recognition Result', result_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+
